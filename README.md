@@ -3,7 +3,8 @@
 **Smith** is a small terminal agent that helps you **design and maintain Protocol Buffers message definitions** in a project folder. You chat in natural language; it follows a ReAct-style loop (`<thought>` + one tool `<action>` per step) to list, create, update, or delete messages, **save** them to `.proto` files, and **compile** them to Python (`*_pb2.py`) or C++ (`.pb.h` / `.pb.cc`) using `protoc` from this repo’s dependencies.
 
 ## Demo
-
+**内容：json数据-->protobuf消息定义-->人工指令修改-->编译成库，全程自然语言交互**
+**仅用于展示Agent**
 ![Agent demo](output.gif)
 
 ## Model
