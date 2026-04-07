@@ -1,2 +1,5 @@
 .env
 /my_project
+build
+/pj_demo
+__pycache__

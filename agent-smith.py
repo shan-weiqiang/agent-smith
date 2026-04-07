@@ -90,6 +90,136 @@ def run_terminal_command(command):
     return "Command succeeded" if result.returncode == 0 else result.stderr
 
 
+def build_shared_lib(project_directory: str) -> str:
+    """
+    Generate a minimal CMake project in `project_directory` and build a shared library
+    from all C++ sources under `project_directory/gen/cpp`, linking protobuf.
+
+    Writes `CMakeLists.txt` into `project_directory` and builds into `project_directory/build`.
+    """
+    project_directory = os.path.abspath(project_directory)
+    if not os.path.isdir(project_directory):
+        return f"Not a directory: {project_directory}"
+
+    if not shutil.which("cmake"):
+        return "No `cmake` on PATH. Install CMake (apt/yum/brew) and retry."
+
+    gen_cpp_dir = os.path.join(project_directory, "gen", "cpp")
+    if not os.path.isdir(gen_cpp_dir):
+        return f"Missing directory: {gen_cpp_dir}"
+
+    sources: list[str] = []
+    for name in os.listdir(gen_cpp_dir):
+        if name.endswith((".cc", ".cpp", ".cxx")):
+            sources.append(os.path.join(gen_cpp_dir, name))
+    sources.sort()
+    if not sources:
+        return f"No C++ sources found under: {gen_cpp_dir}"
+
+    cmake_lists_path = os.path.join(project_directory, "CMakeLists.txt")
+    build_dir = os.path.join(project_directory, "build")
+    os.makedirs(build_dir, exist_ok=True)
+
+    # Use absolute source paths so the generated CMake project can live anywhere.
+    sources_cmake = "\n".join(f'    "{p}"' for p in sources)
+    cmake_text = f"""cmake_minimum_required(VERSION 3.16)
+project(my_project LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include(GNUInstallDirs)
+
+find_package(Protobuf REQUIRED)
+
+add_library(smith_shared SHARED
+{sources_cmake}
+)
+
+target_include_directories(smith_shared
+    PUBLIC
+    "{gen_cpp_dir}"
+    ${{Protobuf_INCLUDE_DIRS}}
+)
+
+# Prefer the imported target when available; otherwise fall back to legacy variables.
+if(TARGET protobuf::libprotobuf)
+    target_link_libraries(smith_shared PRIVATE protobuf::libprotobuf)
+else()
+    target_link_libraries(smith_shared PRIVATE ${{Protobuf_LIBRARIES}})
+endif()
+
+install(TARGETS smith_shared
+    LIBRARY DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+    ARCHIVE DESTINATION ${{CMAKE_INSTALL_LIBDIR}}
+    RUNTIME DESTINATION ${{CMAKE_INSTALL_BINDIR}}
+)
+
+install(
+    DIRECTORY "{gen_cpp_dir}/"
+    DESTINATION ${{CMAKE_INSTALL_INCLUDEDIR}}
+    FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+)
+"""
+
+    try:
+        with open(cmake_lists_path, "w", encoding="utf-8") as f:
+            f.write(cmake_text)
+    except OSError as e:
+        return f"Failed to write {cmake_lists_path}: {e}"
+
+    try:
+        cfg = subprocess.run(
+            ["cmake", "-S", project_directory, "-B", build_dir],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+    except subprocess.TimeoutExpired:
+        return "CMake configure timed out after 300s."
+    if cfg.returncode != 0:
+        err = (cfg.stderr or cfg.stdout or "").strip()
+        return f"CMake configure failed (exit {cfg.returncode}): {err}"
+
+    try:
+        bld = subprocess.run(
+            ["cmake", "--build", build_dir],
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
+    except subprocess.TimeoutExpired:
+        return "CMake build timed out after 600s."
+    if bld.returncode != 0:
+        err = (bld.stderr or bld.stdout or "").strip()
+        return f"CMake build failed (exit {bld.returncode}): {err}"
+
+    install_dir = os.path.join(build_dir, "install")
+    os.makedirs(install_dir, exist_ok=True)
+    try:
+        inst = subprocess.run(
+            ["cmake", "--install", build_dir, "--prefix", install_dir],
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+    except subprocess.TimeoutExpired:
+        return "CMake install timed out after 300s."
+    if inst.returncode != 0:
+        err = (inst.stderr or inst.stdout or "").strip()
+        return f"CMake install failed (exit {inst.returncode}): {err}"
+
+    return (
+        "Built shared library target `smith_shared`.\n"
+        f"- CMakeLists: {cmake_lists_path}\n"
+        f"- Build dir:  {build_dir}\n"
+        f"- Install dir: {install_dir}\n"
+        "Library and headers are installed under the install prefix (lib/, include/)."
+    )
+
+
 def list_messages() -> str:
     """List all protobuf message names defined so far."""
     store = _get_protobuf_store()
@@ -201,8 +331,7 @@ def _compile_proto_messages_protoc(
     Run `protoc --<out_flag>=<dir>` for protobuf message codegen only.
 
     out_flag: ``python_out`` (``*_pb2.py``) or ``cpp_out`` (``.pb.h`` / ``.pb.cc``).
-    Requires ``protoc`` on PATH — project dependency **protobuf-protoc-bin** installs
-    it under ``.venv/bin`` (use ``uv run`` so it is found).
+    Requires ``protoc`` on PATH (use a system-installed protoc, e.g. via apt/brew).
     """
     proto_path = os.path.abspath(proto_path)
     output_directory = os.path.abspath(output_directory)
@@ -215,9 +344,8 @@ def _compile_proto_messages_protoc(
 
     if not shutil.which("protoc"):
         return (
-            "No `protoc` on PATH. Install dependencies (`uv sync` includes "
-            "`protobuf-protoc-bin`) and run the agent with `uv run` so `.venv/bin/protoc` "
-            "is used, or install protobuf via Homebrew/apt."
+            "No `protoc` on PATH. Install a system `protoc` (e.g. `sudo apt install protobuf-compiler` "
+            "or `brew install protobuf`) and retry."
         )
     try:
         result = subprocess.run(
@@ -237,7 +365,7 @@ def _compile_proto_messages_protoc(
 def compile_proto_to_python(proto_path: str, output_directory: str) -> str:
     """
     Compile one .proto file to **protobuf message** Python only (`*_pb2.py`, `--python_out`).
-    Uses the same `protoc` on PATH as C++ (see **protobuf-protoc-bin** in the project).
+    Uses the same `protoc` on PATH as C++.
     Paths must be absolute; use save_proto_file first for in-memory definitions.
     """
     return _compile_proto_messages_protoc(
@@ -397,6 +525,7 @@ TOOLS = [
     read_file,
     write_to_file,
     run_terminal_command,
+    build_shared_lib,
     list_messages,
     show_message,
     create_message,
@@ -432,7 +561,7 @@ Rules:
 - **No raw newlines inside the call** — keep the whole call on one line. For multi-line content (e.g. protobuf fields), put `\\n` inside the string.
 - **Paths** — use absolute paths as string arguments, e.g. `read_file("/Users/me/proj/x.proto")`.
 - **No-argument tools** — `list_messages()` and `get_all_messages_proto()` use empty `()`.
-- **`protoc`** — `compile_proto_to_python` / `compile_proto_to_cpp` need `protoc` on PATH (from **protobuf-protoc-bin** after `uv sync`; run with `uv run`).
+- **`protoc`** — `compile_proto_to_python` / `compile_proto_to_cpp` need a system `protoc` on PATH.
 
 **Examples (valid shape):**
   list_messages()
@@ -445,6 +574,7 @@ Rules:
   read_file("/Users/you/project/in.proto")
   write_to_file("/Users/you/out.txt", "a\\nb")
   run_terminal_command("ls -la")
+  build_shared_lib("/Users/you/project")
   ask_user("Which message should I open?")
   tell_user("Done. What would you like to do next?")
   compile_proto_to_python("/Users/you/project/messages.proto", "/Users/you/project/gen/py")
@@ -495,7 +625,7 @@ User requests and their tool calls:
 8. Compile .proto (protobuf **messages** only — no gRPC stubs):
    compile_proto_to_python("...", "...") → Python `*_pb2.py` via `protoc --python_out` (same `protoc` as below).
    compile_proto_to_cpp("...", "...") → C++ `*.pb.h` / `*.pb.cc` via `protoc --cpp_out`.
-   Both require **`protoc` on PATH** — the project depends on **protobuf-protoc-bin**; use `uv run` so `.venv/bin/protoc` is found (or use a system-installed protoc).
+   Both require **`protoc` on PATH** (install a system `protoc` via apt/brew/etc).
    One .proto file per call. To compile everything currently in memory, call save_proto_file first, then compile that path.
    To compile several on-disk .proto files, call the compile tool once per file (or use run_terminal_command with a shell loop).
 

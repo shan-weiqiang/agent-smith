@@ -1,0 +1,83 @@
+{
+    "robot": {
+      "id": "robot-001",
+      "name": "Atlas-X",
+      "type": "humanoid",
+      "manufacturer": {
+        "name": "RoboDynamics Inc.",
+        "country": "USA"
+      },
+      "dimensions": {
+        "height_m": 1.75,
+        "weight_kg": 85
+      },
+      "power": {
+        "battery_type": "Li-ion",
+        "capacity_kwh": 2.5,
+        "max_runtime_hours": 6
+      },
+      "mobility": {
+        "locomotion": "bipedal",
+        "max_speed_mps": 1.5,
+        "terrain_capability": ["flat", "stairs", "rough"]
+      },
+      "sensors": [
+        {
+          "type": "camera",
+          "model": "StereoCam v3",
+          "resolution": "1920x1080",
+          "fov_degrees": 120
+        },
+        {
+          "type": "lidar",
+          "model": "LDS-01",
+          "range_m": 30
+        },
+        {
+          "type": "imu",
+          "model": "IMU-X2"
+        }
+      ],
+      "actuators": [
+        {
+          "type": "servo_motor",
+          "count": 24,
+          "max_torque_nm": 120
+        }
+      ],
+      "compute": {
+        "cpu": "8-core ARM",
+        "gpu": "Embedded GPU",
+        "ram_gb": 16,
+        "storage_gb": 256
+      },
+      "software": {
+        "os": "Linux",
+        "middleware": "ROS2",
+        "ai_modules": [
+          "object_detection",
+          "path_planning",
+          "speech_recognition"
+        ]
+      },
+      "communication": {
+        "interfaces": ["WiFi", "Ethernet", "Bluetooth"],
+        "protocols": ["MQTT", "DDS"]
+      },
+      "status": {
+        "state": "idle",
+        "battery_level_percent": 87,
+        "temperature_celsius": 42.5,
+        "last_maintenance": "2026-03-15T10:30:00Z"
+      },
+      "tasks": [
+        {
+          "task_id": "task-101",
+          "description": "Inspect warehouse aisle",
+          "priority": "high",
+          "status": "pending"
+        }
+      ]
+    }
+  }
+  

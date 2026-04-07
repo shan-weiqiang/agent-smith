@@ -15,7 +15,6 @@ dependencies = [
     { name = "click", version = "8.1.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "click", version = "8.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "dotenv" },
-    { name = "protobuf-protoc-bin" },
 ]
 
 [package.metadata]
@@ -23,8 +22,10 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.89.0" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "protobuf-protoc-bin", specifier = ">=34.1" },
 ]
+
+[package.metadata.requires-dev]
+dev = []
 
 [[package]]
 name = "annotated-types"
@@ -333,19 +334,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/73/a009f41c5eed71c49bec53036c4b33555afcdee70682a18c6f66e396c039/jiter-0.13.0-graalpy312-graalpy250_312_native-macosx_11_0_arm64.whl", hash = "sha256:ff732bd0a0e778f43d5009840f20b935e79087b4dc65bd36f1cd0f9b04b8ff7f", size = 303808, upload-time = "2026-02-02T12:37:52.092Z" },
     { url = "https://files.pythonhosted.org/packages/c4/10/528b439290763bff3d939268085d03382471b442f212dca4ff5f12802d43/jiter-0.13.0-graalpy312-graalpy250_312_native-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ab44b178f7981fcaea7e0a5df20e773c663d06ffda0198f1a524e91b2fde7e59", size = 337384, upload-time = "2026-02-02T12:37:53.582Z" },
     { url = "https://files.pythonhosted.org/packages/67/8a/a342b2f0251f3dac4ca17618265d93bf244a2a4d089126e81e4c1056ac50/jiter-0.13.0-graalpy312-graalpy250_312_native-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7bb00b6d26db67a05fe3e12c76edc75f32077fb51deed13822dc648fa373bc19", size = 343768, upload-time = "2026-02-02T12:37:55.055Z" },
-]
-
-[[package]]
-name = "protobuf-protoc-bin"
-version = "34.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1c/49/68a66a714ed2d856c4195ca913e131cfdf0cc487dfc53d006cd44f2cf329/protobuf_protoc_bin-34.1.tar.gz", hash = "sha256:559c82e48802d300338d2782fc914b31c4d4d87d9ff7111d9f153b6fcf7856db", size = 9722, upload-time = "2026-03-20T06:37:51.875Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/8c/8e7f91f7db0457151311fd9bc48dfd2042cd681c0204585e57c3cf4308fb/protobuf_protoc_bin-34.1-py2.py3-none-macosx_10_13_universal2.whl", hash = "sha256:5d01e2d92529b42a91bf545c583164b3fe426a3216ba15df94ef5fdab52dbcfa", size = 2699510, upload-time = "2026-03-20T06:37:44.399Z" },
-    { url = "https://files.pythonhosted.org/packages/fe/72/0c51d430cba950257e952917a35f53c778ede2bbf443f6de774059593db8/protobuf_protoc_bin-34.1-py2.py3-none-manylinux_2_24_aarch64.whl", hash = "sha256:00e4e79a21ab6742afadec974570448203b830fa0d3193d00f2eaa52ee9f20a0", size = 3569033, upload-time = "2026-03-20T06:37:46.104Z" },
-    { url = "https://files.pythonhosted.org/packages/41/46/604006e380301b0484b8c5a0c92862b56c521592a871135e62d88ab0ce8f/protobuf_protoc_bin-34.1-py2.py3-none-manylinux_2_24_x86_64.whl", hash = "sha256:06ffa3e91359515f7a5c0c076b7fe461fe9dd25b1b8136e9e9fd7d63ede10c82", size = 3616782, upload-time = "2026-03-20T06:37:47.738Z" },
-    { url = "https://files.pythonhosted.org/packages/9f/48/46767b9ce0e2e1e7cd46c2524be9373a8cccdf392a089b253ef25c3ca3f9/protobuf_protoc_bin-34.1-py2.py3-none-win_amd64.whl", hash = "sha256:136f32e15ff17e2194303b6d288ec8286a67d0cd77829bd2166bb4c5ba1bc8bd", size = 3491988, upload-time = "2026-03-20T06:37:49.131Z" },
-    { url = "https://files.pythonhosted.org/packages/4f/38/bc35710462ffea796ea96668f8e8dee40a15c289b575541cbebea75412da/protobuf_protoc_bin-34.1-py2.py3-none-win_arm64.whl", hash = "sha256:a388ce70c3e73fa71c118d6eb7ea5a841a9cc93ee96d23af05f1f4b165451306", size = 3491989, upload-time = "2026-03-20T06:37:50.768Z" },
 ]
 
 [[package]]
